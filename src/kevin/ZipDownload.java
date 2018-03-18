@@ -170,28 +170,32 @@ public class ZipDownload {
 		int length = 0;
 		try {
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-			int firstDL = url.openConnection().getContentLength() - 2000;
+			int fileSize = url.openConnection().getContentLength();
+			int firstDL = fileSize - 2000;
 			connection.setRequestProperty("Range", "bytes=" + firstDL + "-");
 			if (this.userAgent != null) {
 				connection.setRequestProperty("User-Agent", this.userAgent);
 			}
 			connection.connect();
 			byte[] bytes = IOUtils.toByteArray(connection.getInputStream());
-			int one, two, three, four = 0;
 			for (int i = 0; i < bytes.length; i++) {
 				if (bytes[i] == 80 && bytes[i + 1] == 75 && bytes[i + 2] == 05 && bytes[i + 3] == 06) {
-					one = bytes[i + 12] & 0xff;
-					two = bytes[i + 13] & 0xff;
-					three = bytes[i + 14] & 0xff;
-					four = bytes[i + 15] & 0xff;
-					length = (four << 24) | (three << 16) | (two << 8) | (one << 2);
-					break;
+					int offset = getFourByteInt(bytes, i, 16);
+					return (fileSize - offset);
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return length;
+	}
+	
+	private int getFourByteInt(byte[] bytes, int i, int u) {
+		int f1 = bytes[i + u] & 0xff;
+		int f2 = bytes[i + (u + 1)] & 0xff;
+		int f3 = bytes[i + (u + 2)] & 0xff;
+		int f4 = bytes[i + (u + 3)] & 0xff;
+		return (f4 << 24) | (f3 << 16) | (f2 << 8) | (f1);
 	}
 
 }
